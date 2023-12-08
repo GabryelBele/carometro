@@ -13,6 +13,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.text.DateFormat;
 import java.util.Date;
 
@@ -22,6 +23,7 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -36,6 +38,7 @@ public class Carometro extends JFrame {
 
 	DAO dao = new DAO();
 	private Connection conn;
+	private PreparedStatement pst;
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
@@ -82,7 +85,7 @@ public class Carometro extends JFrame {
 		setIconImage(
 				Toolkit.getDefaultToolkit().getImage(Carometro.class.getResource("/img/instagram_photo_icon.png")));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 640, 356);
+		setBounds(100, 100, 639, 356);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
@@ -156,6 +159,17 @@ public class Carometro extends JFrame {
 		});
 		btnCarregar.setBounds(219, 124, 141, 27);
 		contentPane.add(btnCarregar);
+
+		JButton btnAdicionarr = new JButton("");
+		btnAdicionarr.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				adicionar();
+			}
+		});
+		btnAdicionarr.setToolTipText("Adicionar");
+		btnAdicionarr.setIcon(new ImageIcon(Carometro.class.getResource("/img/create.png")));
+		btnAdicionarr.setBounds(22, 178, 64, 64);
+		contentPane.add(btnAdicionarr);
 	}
 
 	private void status() {
@@ -181,19 +195,40 @@ public class Carometro extends JFrame {
 	private void carregarFoto() {
 		JFileChooser jfc = new JFileChooser();
 		jfc.setDialogTitle("Selecionar arquivos");
-		jfc.setFileFilter(new FileNameExtensionFilter("Arquivos de imagens ( *.PNG, *.JPG, *.JPEG )", "png", "jpg", "jpeg"));
+		jfc.setFileFilter(
+				new FileNameExtensionFilter("Arquivos de imagens ( *.PNG, *.JPG, *.JPEG )", "png", "jpg", "jpeg"));
 		int resultado = jfc.showOpenDialog(this);
-		if(resultado == JFileChooser.APPROVE_OPTION) {
+		if (resultado == JFileChooser.APPROVE_OPTION) {
 			try {
 				fs = new FileInputStream(jfc.getSelectedFile());
 				tamanho = (int) jfc.getSelectedFile().length();
-				
-				Image foto = ImageIO.read(jfc.getSelectedFile()).getScaledInstance(lblFoto.getWidth(), lblFoto.getHeight(), Image.SCALE_SMOOTH);
+
+				Image foto = ImageIO.read(jfc.getSelectedFile()).getScaledInstance(lblFoto.getWidth(),
+						lblFoto.getHeight(), Image.SCALE_SMOOTH);
 				lblFoto.setIcon(new ImageIcon(foto));
 				lblFoto.updateUI();
 			} catch (Exception e) {
 				System.out.println(e);
 			}
 		}
-}
+	}
+	
+	private void adicionar() {
+		String insert = "insert into alunos (nome,foto) values (?,?)";
+		try {
+			conn = dao.conectar();
+			pst = conn.prepareStatement(insert);
+			pst.setString(1, txtNome.getText());
+			pst.setBlob(2, fs, tamanho);
+			int confirma = pst.executeUpdate();
+			if (confirma == 1) {
+				JOptionPane.showMessageDialog(null, "Aluno cadastrado com sucesso!");
+			} else {
+				JOptionPane.showMessageDialog(null, "Aluno não cadastrado.");
+			}
+			conn.close();
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
 }
